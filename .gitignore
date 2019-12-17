@@ -2,3 +2,5 @@
 TODO
 /template-operator
 !vendor/**
+main
+.vscode/

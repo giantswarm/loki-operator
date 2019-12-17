@@ -8,8 +8,13 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/metricsresource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/retryresource"
+	"k8s.io/api/core/v1"
 
 	"github.com/giantswarm/loki-operator/service/controller/resource/test"
+)
+
+const (
+	promtailConfigLabel = "giantswarm.io/loki-promtail-config"
 )
 
 type todoResourceSetConfig struct {
@@ -58,8 +63,15 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 	}
 
 	handlesFunc := func(obj interface{}) bool {
-
-		return false
+		pod, castOk := obj.(*v1.Pod)
+		if !castOk {
+			return false
+		}
+		_, found := pod.ObjectMeta.Labels[promtailConfigLabel]
+		if !found {
+			return false
+		}
+		return true
 	}
 
 	var resourceSet *controller.ResourceSet
