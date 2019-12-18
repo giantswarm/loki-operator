@@ -8,18 +8,17 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/metricsresource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/retryresource"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	"time"
 
+	"github.com/giantswarm/loki-operator/service/controller/promtailconfig"
 	"github.com/giantswarm/loki-operator/service/controller/resource/test"
-)
-
-const (
-	promtailConfigLabel = "giantswarm.io/loki-promtail-config"
 )
 
 type todoResourceSetConfig struct {
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
+	Handler   promtailconfig.Handler
 }
 
 func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, error) {
@@ -27,9 +26,15 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 
 	var testResource resource.Interface
 	{
+		handler, err := promtailconfig.NewPeriodicHandler(30*time.Second, 30*time.Second)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
 		c := test.Config{
 			K8sClient: config.K8sClient,
 			Logger:    config.Logger,
+			Handler:   handler,
 		}
 
 		testResource, err = test.New(c)
@@ -67,7 +72,7 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 		if !castOk {
 			return false
 		}
-		_, found := pod.ObjectMeta.Labels[promtailConfigLabel]
+		_, found := pod.ObjectMeta.Labels[test.PromtailConfigLabel]
 		if !found {
 			return false
 		}

@@ -2,6 +2,8 @@ package promtailconfig
 
 import "time"
 
+import "github.com/giantswarm/microerror"
+
 // Key allows to identify a promtail config for a specific ContainerName running
 // in a pod selectable by Labels in Namespace.
 // Key's values must be rendered as comments into the final config map
@@ -20,8 +22,7 @@ type Key struct {
 // configmap.
 type Handler interface {
 	AddConfig(key Key, yamlContent string)
-	DelConfig(key Key, yamlContent string)
-	Render() string
+	DelConfig(key Key)
 }
 
 // PeriodicHandler is an implementation of handler, that loads promtail's configmap
@@ -30,9 +31,31 @@ type Handler interface {
 // PeriodicHandler has a configurable timer, that periodically renders all the
 // data in snippets and produces a new value for the promtail's configmap.
 type PeriodicHandler struct {
-	snippets map[Key]string
+	snippets     map[Key]string
+	initialDelay time.Duration
+	period       time.Duration
 }
 
-func NewPeriodicHandler(initialDelay time.Duration, period time.Duration) (*Handler, error) {
-	return nil, nil
+func NewPeriodicHandler(initialDelay time.Duration, period time.Duration) (Handler, error) {
+	if initialDelay <= 0 {
+		return nil, microerror.New("initialDelay must be > 0")
+	}
+	if period <= 0 {
+		return nil, microerror.New("period must be > 0")
+	}
+	return &PeriodicHandler{
+		snippets:     make(map[Key]string),
+		initialDelay: initialDelay,
+		period:       period,
+	}, nil
+}
+
+func (p *PeriodicHandler) AddConfig(key Key, yamlContent string) {
+	p.snippets[key] = yamlContent
+}
+
+func (p *PeriodicHandler) DelConfig(key Key) {
+	if _, found := p.snippets[key]; found {
+		delete(p.snippets, key)
+	}
 }
