@@ -31,7 +31,7 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 		if err != nil {
 			return nil, err
 		}
-		handler, err := promtailconfig.NewPeriodicHandler(3*time.Second, 30*time.Second, pc)
+		handler, err := promtailconfig.NewPeriodicHandler(3*time.Second, 10*time.Second, pc)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}

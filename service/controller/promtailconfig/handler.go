@@ -1,8 +1,13 @@
 package promtailconfig
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"time"
+
 	"github.com/giantswarm/microerror"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Key allows to identify a promtail config for a specific ContainerName running
@@ -16,6 +21,43 @@ type Key struct {
 	Namespace     string
 	Labels        string
 	ContainerName string
+}
+
+func NewKey(pod *v1.Pod, containerName string) *Key {
+	var labels strings.Builder
+	labelKeys := []string{}
+	for k := range pod.ObjectMeta.Labels {
+		labelKeys = append(labelKeys, k)
+	}
+	sort.Strings(labelKeys)
+	for _, k := range labelKeys {
+		v := pod.ObjectMeta.Labels[k]
+		labels.WriteString(fmt.Sprintf("%v=%v,", k, v))
+	}
+
+	return &Key{
+		Namespace:     pod.Namespace,
+		Labels:        labels.String(),
+		ContainerName: containerName,
+	}
+}
+
+func SortKeys(keys []Key) {
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i].Namespace < keys[j].Namespace {
+			return true
+		} else if keys[i].Namespace > keys[j].Namespace {
+			return false
+		}
+		// here it means Namespace values are equal, move to the next one
+		if keys[i].Labels < keys[j].Labels {
+			return true
+		} else if keys[i].Labels > keys[j].Labels {
+			return false
+		}
+		// here it means Labels values are equal, move to the next one
+		return keys[i].ContainerName < keys[j].ContainerName
+	})
 }
 
 // Handler is an interface that delivers operations required to sync between
@@ -36,7 +78,7 @@ type PeriodicHandler struct {
 	initialDelay time.Duration
 	period       time.Duration
 	promMap      *PromtailConfigMap
-	updateTimer *time.Timer
+	updateTimer  *time.Timer
 }
 
 func NewPeriodicHandler(initialDelay time.Duration, period time.Duration, promMap *PromtailConfigMap) (Handler, error) {
@@ -56,8 +98,9 @@ func NewPeriodicHandler(initialDelay time.Duration, period time.Duration, promMa
 		period:       period,
 		promMap:      promMap,
 	}
-	ph.init()
-	// TODO: ph.Load()
+	if err := ph.init(); err != nil {
+		return nil, err
+	}
 	return ph, nil
 }
 
@@ -71,17 +114,24 @@ func (p *PeriodicHandler) DelConfig(key Key) {
 	}
 }
 
+func (p *PeriodicHandler) init() error {
+	snips, err := p.promMap.Load()
+	if err != nil {
+		return err
+	}
+	p.snippets = snips
 
-func (p *PeriodicHandler) init() {
 	time.AfterFunc(p.initialDelay, func() {
 		p.updateTimer = time.NewTimer(p.period)
+		p.promMap.Update(p.snippets)
 		go p.handleUpdateTimer()
 	})
+	return nil
 }
 
 func (p *PeriodicHandler) handleUpdateTimer() {
 	for {
-		<- p.updateTimer.C
+		<-p.updateTimer.C
 		p.promMap.Update(p.snippets)
 	}
 }

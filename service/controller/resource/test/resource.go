@@ -1,10 +1,6 @@
 package test
 
 import (
-	"fmt"
-	"sort"
-	"strings"
-
 	"github.com/giantswarm/k8sclient"
 	"github.com/giantswarm/loki-operator/service/controller/promtailconfig"
 	"github.com/giantswarm/microerror"
@@ -79,22 +75,8 @@ func (r *Resource) configKeyName(pod *v1.Pod) (*promtailconfig.Key, error) {
 		}
 	}
 
-	var labels strings.Builder
-	labelKeys := []string{}
-	for k := range pod.ObjectMeta.Labels {
-		labelKeys = append(labelKeys, k)
-	}
-	sort.Strings(labelKeys)
-	for _, k := range labelKeys {
-		v := pod.ObjectMeta.Labels[k]
-		labels.WriteString(fmt.Sprintf("%v=%v,", k, v))
-	}
-
-	return &promtailconfig.Key{
-		Namespace:     pod.Namespace,
-		Labels:        labels.String(),
-		ContainerName: containerName,
-	}, nil
+	key := promtailconfig.NewKey(pod, containerName)
+	return key, nil
 }
 
 func (r *Resource) loadConfigMapByPod(pod *v1.Pod) (string, error) {
