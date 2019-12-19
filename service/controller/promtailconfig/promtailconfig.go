@@ -176,8 +176,14 @@ func (p *PromtailConfigMap) render(key Key, snippet string) string {
 	config.WriteString(fmt.Sprintf("%s %s\n", containerHeader, key.ContainerName))
 	config.WriteString(fmt.Sprintf("%s %s\n", nsHeader, key.Namespace))
 	config.WriteString(fmt.Sprintf("%s %s\n", labelsHeader, key.Labels))
-	config.WriteString(snippet)
-	config.WriteRune('\n')
+	lines := strings.Split(snippet, "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		config.WriteString(fmt.Sprintf("%s\n", snippet))
+	}
+	config.WriteString("\n")
 
 	return config.String()
 }
