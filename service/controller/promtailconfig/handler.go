@@ -1,8 +1,9 @@
 package promtailconfig
 
-import "time"
-
-import "github.com/giantswarm/microerror"
+import (
+	"time"
+	"github.com/giantswarm/microerror"
+)
 
 // Key allows to identify a promtail config for a specific ContainerName running
 // in a pod selectable by Labels in Namespace.
@@ -34,20 +35,30 @@ type PeriodicHandler struct {
 	snippets     map[Key]string
 	initialDelay time.Duration
 	period       time.Duration
+	promMap      *PromtailConfigMap
+	updateTimer *time.Timer
 }
 
-func NewPeriodicHandler(initialDelay time.Duration, period time.Duration) (Handler, error) {
+func NewPeriodicHandler(initialDelay time.Duration, period time.Duration, promMap *PromtailConfigMap) (Handler, error) {
 	if initialDelay <= 0 {
 		return nil, microerror.New("initialDelay must be > 0")
 	}
 	if period <= 0 {
 		return nil, microerror.New("period must be > 0")
 	}
-	return &PeriodicHandler{
+	if promMap == nil {
+		return nil, microerror.New("promMap can't be nil")
+	}
+
+	ph := &PeriodicHandler{
 		snippets:     make(map[Key]string),
 		initialDelay: initialDelay,
 		period:       period,
-	}, nil
+		promMap:      promMap,
+	}
+	ph.init()
+	// TODO: ph.Load()
+	return ph, nil
 }
 
 func (p *PeriodicHandler) AddConfig(key Key, yamlContent string) {
@@ -57,5 +68,20 @@ func (p *PeriodicHandler) AddConfig(key Key, yamlContent string) {
 func (p *PeriodicHandler) DelConfig(key Key) {
 	if _, found := p.snippets[key]; found {
 		delete(p.snippets, key)
+	}
+}
+
+
+func (p *PeriodicHandler) init() {
+	time.AfterFunc(p.initialDelay, func() {
+		p.updateTimer = time.NewTimer(p.period)
+		go p.handleUpdateTimer()
+	})
+}
+
+func (p *PeriodicHandler) handleUpdateTimer() {
+	for {
+		<- p.updateTimer.C
+		p.promMap.Update(p.snippets)
 	}
 }

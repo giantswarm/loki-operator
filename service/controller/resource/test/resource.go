@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/giantswarm/k8sclient"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	Name = "todo"
+	Name                       = "todo"
 	PromtailConfigLabel        = "giantswarm.io/loki-promtail-config"
 	PromtailContainerNameLabel = "giantswarm.io/loki-promtail-container"
 	PromtailConfigMapKeyName   = "promtail.yaml"
@@ -79,7 +80,13 @@ func (r *Resource) configKeyName(pod *v1.Pod) (*promtailconfig.Key, error) {
 	}
 
 	var labels strings.Builder
-	for k, v := range pod.ObjectMeta.Labels {
+	labelKeys := []string{}
+	for k := range pod.ObjectMeta.Labels {
+		labelKeys = append(labelKeys, k)
+	}
+	sort.Strings(labelKeys)
+	for _, k := range labelKeys {
+		v := pod.ObjectMeta.Labels[k]
 		labels.WriteString(fmt.Sprintf("%v=%v,", k, v))
 	}
 

@@ -26,7 +26,12 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 
 	var testResource resource.Interface
 	{
-		handler, err := promtailconfig.NewPeriodicHandler(30*time.Second, 30*time.Second)
+		pc, err := promtailconfig.NewPromtailConfigMap(config.K8sClient, "loki", "loki-promtail",
+			test.PromtailConfigMapKeyName)
+		if err != nil {
+			return nil, err
+		}
+		handler, err := promtailconfig.NewPeriodicHandler(3*time.Second, 30*time.Second, pc)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
