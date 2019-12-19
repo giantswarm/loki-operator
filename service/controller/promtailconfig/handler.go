@@ -115,12 +115,6 @@ func (p *PeriodicHandler) DelConfig(key Key) {
 }
 
 func (p *PeriodicHandler) init() error {
-	snips, err := p.promMap.Load()
-	if err != nil {
-		return err
-	}
-	p.snippets = snips
-
 	time.AfterFunc(p.initialDelay, func() {
 		p.updateTimer = time.NewTimer(p.period)
 		p.promMap.Update(p.snippets)

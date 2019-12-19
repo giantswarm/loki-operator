@@ -103,7 +103,7 @@ func (p *PromtailConfigMap) Load() (map[Key]string, error) {
 		}
 		startLineIndex += 3
 		var nextStart int
-		for nextStart = startLineIndex;;nextStart++ {
+		for nextStart = startLineIndex; nextStart < len(lines); nextStart++ {
 			if strings.HasPrefix(lines[nextStart], containerHeader) {
 				break
 			}
