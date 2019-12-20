@@ -8,18 +8,25 @@ import (
 	"github.com/giantswarm/operatorkit/resource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/metricsresource"
 	"github.com/giantswarm/operatorkit/resource/wrapper/retryresource"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	"time"
 
+	"github.com/giantswarm/loki-operator/service/controller/promtailconfig"
 	"github.com/giantswarm/loki-operator/service/controller/resource/test"
 )
 
-const (
-	promtailConfigLabel = "giantswarm.io/loki-promtail-config"
-)
+type LokiOperatorConfig struct {
+	PromtailConfigmapNamespace string
+	PromtailConfigmapName      string
+	InitialDelaySec            int
+	PeriodSec                  int
+}
 
 type todoResourceSetConfig struct {
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
+	Handler   promtailconfig.Handler
+	Loki      LokiOperatorConfig
 }
 
 func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, error) {
@@ -27,9 +34,21 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 
 	var testResource resource.Interface
 	{
+		pc, err := promtailconfig.NewPromtailConfigMap(config.K8sClient, config.Loki.PromtailConfigmapNamespace,
+			config.Loki.PromtailConfigmapName, test.PromtailConfigMapKeyName)
+		if err != nil {
+			return nil, err
+		}
+		handler, err := promtailconfig.NewPeriodicHandler(time.Duration(config.Loki.InitialDelaySec)*time.Second,
+			time.Duration(config.Loki.PeriodSec)*time.Second, pc)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
 		c := test.Config{
 			K8sClient: config.K8sClient,
 			Logger:    config.Logger,
+			Handler:   handler,
 		}
 
 		testResource, err = test.New(c)
@@ -67,7 +86,7 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 		if !castOk {
 			return false
 		}
-		_, found := pod.ObjectMeta.Labels[promtailConfigLabel]
+		_, found := pod.ObjectMeta.Labels[test.PromtailConfigLabel]
 		if !found {
 			return false
 		}

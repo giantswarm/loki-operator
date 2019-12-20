@@ -7,9 +7,14 @@ import (
 )
 
 func (r *Resource) EnsureDeleted(ctx context.Context, obj interface{}) error {
-	_, castOk := obj.(*v1.Pod)
+	pod, castOk := obj.(*v1.Pod)
 	if !castOk {
 		return nil
 	}
+	key, err := r.configKeyName(pod)
+	if err != nil {
+		return nil
+	}
+	r.handler.DelConfig(*key)
 	return nil
 }

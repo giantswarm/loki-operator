@@ -12,3 +12,12 @@ var invalidConfigError = &microerror.Error{
 func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
+
+var invalidDynamicConfigError = &microerror.Error{
+	Kind: "invalidDynamicConfigError",
+}
+
+// IsInvalidDynamicConfig asserts invalidConfigError.
+func IsInvalidDynamicConfig(err error) bool {
+	return microerror.Cause(err) == invalidDynamicConfigError
+}

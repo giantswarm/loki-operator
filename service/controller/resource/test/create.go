@@ -7,9 +7,18 @@ import (
 )
 
 func (r *Resource) EnsureCreated(ctx context.Context, obj interface{}) error {
-	_, castOk := obj.(*v1.Pod)
+	pod, castOk := obj.(*v1.Pod)
 	if !castOk {
 		return nil
 	}
+	key, err := r.configKeyName(pod)
+	if err != nil {
+		return err
+	}
+	cfgTxt, err := r.loadConfigMapByPod(pod)
+	if err != nil {
+		return err
+	}
+	r.handler.AddConfig(*key, cfgTxt)
 	return nil
 }
