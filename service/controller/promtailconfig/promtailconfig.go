@@ -80,13 +80,7 @@ func (p *PromtailConfigMap) Load() (map[Key]string, error) {
 		// TODO: log here
 		return nil, nil
 	}
-	var lines []string
-	for _, l := range strings.Split(config, "\n") {
-		if l == "" {
-			continue
-		}
-		lines = append(lines, l)
-	}
+	lines := strings.Split(config, "\n")
 
 	res := make(map[Key]string)
 	startLineIndex := -1
@@ -99,7 +93,7 @@ func (p *PromtailConfigMap) Load() (map[Key]string, error) {
 	for startLineIndex < len(lines) {
 		key, err := p.parseKey(lines, startLineIndex)
 		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 		startLineIndex += 3
 		var nextStart int
@@ -150,7 +144,9 @@ func (p *PromtailConfigMap) Update(newSnippets map[Key]string) error {
 		SortKeys(newKeysSorted)
 		for i := range newKeysSorted {
 			// if relevant keys or values for these keys differ, we need to update
-			if oldKeysSorted[i] != newKeysSorted[i] || oldSnippets[oldKeysSorted[i]] != newSnippets[newKeysSorted[i]] {
+			keysNotEqual := oldKeysSorted[i] != newKeysSorted[i] 
+			valsNotEqual := oldSnippets[oldKeysSorted[i]] != newSnippets[newKeysSorted[i]] 
+			if keysNotEqual || valsNotEqual {
 				updateNeeded = true
 				break
 			}
@@ -176,14 +172,7 @@ func (p *PromtailConfigMap) render(key Key, snippet string) string {
 	config.WriteString(fmt.Sprintf("%s %s\n", containerHeader, key.ContainerName))
 	config.WriteString(fmt.Sprintf("%s %s\n", nsHeader, key.Namespace))
 	config.WriteString(fmt.Sprintf("%s %s\n", labelsHeader, key.Labels))
-	lines := strings.Split(snippet, "\n")
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		config.WriteString(fmt.Sprintf("%s\n", snippet))
-	}
-	config.WriteString("\n")
+	config.WriteString(snippet)
 
 	return config.String()
 }
