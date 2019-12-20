@@ -2,7 +2,7 @@ package project
 
 var (
 	bundleVersion = "0.0.1"
-	description   = "The loki-operator does something."
+	description   = "The loki-operator is a PoC quality operator that generates promtail's ConfigMap out of partial configs."
 	gitSHA        = "n/a"
 	name          = "loki-operator"
 	source        = "https://github.com/giantswarm/loki-operator"

@@ -15,10 +15,18 @@ import (
 	"github.com/giantswarm/loki-operator/service/controller/resource/test"
 )
 
+type LokiOperatorConfig struct {
+	PromtailConfigmapNamespace string
+	PromtailConfigmapName      string
+	InitialDelaySec            int
+	PeriodSec                  int
+}
+
 type todoResourceSetConfig struct {
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
 	Handler   promtailconfig.Handler
+	Loki      LokiOperatorConfig
 }
 
 func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, error) {
@@ -26,12 +34,13 @@ func newTODOResourceSet(config todoResourceSetConfig) (*controller.ResourceSet, 
 
 	var testResource resource.Interface
 	{
-		pc, err := promtailconfig.NewPromtailConfigMap(config.K8sClient, "loki", "loki-promtail",
-			test.PromtailConfigMapKeyName)
+		pc, err := promtailconfig.NewPromtailConfigMap(config.K8sClient, config.Loki.PromtailConfigmapNamespace,
+			config.Loki.PromtailConfigmapName, test.PromtailConfigMapKeyName)
 		if err != nil {
 			return nil, err
 		}
-		handler, err := promtailconfig.NewPeriodicHandler(3*time.Second, 10*time.Second, pc)
+		handler, err := promtailconfig.NewPeriodicHandler(time.Duration(config.Loki.InitialDelaySec)*time.Second,
+			time.Duration(config.Loki.PeriodSec)*time.Second, pc)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}

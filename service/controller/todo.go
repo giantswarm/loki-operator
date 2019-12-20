@@ -14,6 +14,7 @@ import (
 type TODOConfig struct {
 	K8sClient k8sclient.Interface
 	Logger    micrologger.Logger
+	Loki      LokiOperatorConfig
 }
 
 type TODO struct {
@@ -66,6 +67,7 @@ func newTODOResourceSets(config TODOConfig) ([]*controller.ResourceSet, error) {
 		c := todoResourceSetConfig{
 			K8sClient: config.K8sClient,
 			Logger:    config.Logger,
+			Loki:      config.Loki,
 		}
 
 		resourceSet, err = newTODOResourceSet(c)

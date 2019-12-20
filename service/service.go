@@ -95,6 +95,12 @@ func New(config Config) (*Service, error) {
 		c := controller.TODOConfig{
 			K8sClient: k8sClient,
 			Logger:    config.Logger,
+			Loki: controller.LokiOperatorConfig{
+				PromtailConfigmapNamespace: config.Viper.GetString(config.Flag.Loki.Namespace),
+				PromtailConfigmapName: config.Viper.GetString(config.Flag.Loki.Name),
+				InitialDelaySec: config.Viper.GetInt(config.Flag.Loki.InitialDelaySec),
+				PeriodSec: config.Viper.GetInt(config.Flag.Loki.PeriodSec),
+			},
 		}
 
 		todoController, err = controller.NewTODO(c)

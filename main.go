@@ -109,6 +109,10 @@ func mainE(ctx context.Context) error {
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.CAFile, "", "Certificate authority file path to use to authenticate with Kubernetes.")
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.CrtFile, "", "Certificate file path to use to authenticate with Kubernetes.")
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.KeyFile, "", "Key file path to use to authenticate with Kubernetes.")
+	daemonCommand.PersistentFlags().String(f.Loki.Namespace, "loki", "namespace where promtail's ConfigMap is")
+	daemonCommand.PersistentFlags().String(f.Loki.Name, "loki-promtail", "name of the promtail's ConfigMap")
+	daemonCommand.PersistentFlags().Int(f.Loki.InitialDelaySec, 30, "Initial delay for catching existing pods' config [sec]")
+	daemonCommand.PersistentFlags().Int(f.Loki.PeriodSec, 30, "Period of promtail's configmap synchronization [sec]")
 
 	newCommand.CobraCommand().Execute()
 
