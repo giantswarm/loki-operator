@@ -144,8 +144,8 @@ func (p *PromtailConfigMap) Update(newSnippets map[Key]string) error {
 		SortKeys(newKeysSorted)
 		for i := range newKeysSorted {
 			// if relevant keys or values for these keys differ, we need to update
-			keysNotEqual := oldKeysSorted[i] != newKeysSorted[i] 
-			valsNotEqual := oldSnippets[oldKeysSorted[i]] != newSnippets[newKeysSorted[i]] 
+			keysNotEqual := oldKeysSorted[i] != newKeysSorted[i]
+			valsNotEqual := oldSnippets[oldKeysSorted[i]] != newSnippets[newKeysSorted[i]]
 			if keysNotEqual || valsNotEqual {
 				updateNeeded = true
 				break

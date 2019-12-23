@@ -97,9 +97,9 @@ func New(config Config) (*Service, error) {
 			Logger:    config.Logger,
 			Loki: controller.LokiOperatorConfig{
 				PromtailConfigmapNamespace: config.Viper.GetString(config.Flag.Loki.Namespace),
-				PromtailConfigmapName: config.Viper.GetString(config.Flag.Loki.Name),
-				InitialDelaySec: config.Viper.GetInt(config.Flag.Loki.InitialDelaySec),
-				PeriodSec: config.Viper.GetInt(config.Flag.Loki.PeriodSec),
+				PromtailConfigmapName:      config.Viper.GetString(config.Flag.Loki.Name),
+				InitialDelaySec:            config.Viper.GetInt(config.Flag.Loki.InitialDelaySec),
+				PeriodSec:                  config.Viper.GetInt(config.Flag.Loki.PeriodSec),
 			},
 		}
 

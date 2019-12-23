@@ -17,9 +17,9 @@ const (
 )
 
 type Config struct {
-	K8sClient                  k8sclient.Interface
-	Logger                     micrologger.Logger
-	Handler                    promtailconfig.Handler
+	K8sClient k8sclient.Interface
+	Logger    micrologger.Logger
+	Handler   promtailconfig.Handler
 }
 
 type Resource struct {
